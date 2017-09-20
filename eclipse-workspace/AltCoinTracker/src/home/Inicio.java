@@ -1,21 +1,22 @@
 package home;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.Properties;
 
-import org.json.JSONObject;
+import org.json.JSONArray;
 
-import com.tictactec.ta.lib.Core;
+import connection.API;
 
 public class Inicio {
 
 	public static void main(String[] args) {
-		Core core = new Core();
+//		Core core = new Core();
+		
+		try {
+			JSONArray arry = API.getMarketSummary("FTC");
+			System.out.println("arry: " + arry.toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 //	public static void testAConnection() throws IOException {
