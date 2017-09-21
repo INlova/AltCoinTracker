@@ -1,51 +1,52 @@
 package home;
 
 import java.io.IOException;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Calendar;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.json.JSONArray;
+import org.json.JSONObject;
 
 import connection.API;
 
 public class Inicio {
 
+	public static boolean finish = false;
+
 	public static void main(String[] args) {
-//		Core core = new Core();
+		// Core core = new Core();
+		try {
+			testHash();
+		} catch (InvalidKeyException | NoSuchAlgorithmException e1) {
+			e1.printStackTrace();
+		}
+		System.exit(0);
 		
 		try {
-			JSONArray arry = API.getMarketSummary("FTC");
-			System.out.println("arry: " + arry.toString());
-		} catch (IOException e) {
+			while (!finish) {
+				JSONObject arry = API.getTicker("XZC");
+				System.out.println("TEST - " + Calendar.getInstance().getTimeInMillis() + ": " + arry.toString());
+
+				Thread.sleep(5000);
+			}
+		} catch (InterruptedException | IOException e) {
 			e.printStackTrace();
 		}
+
+		System.exit(0);
 	}
-
-//	public static void testAConnection() throws IOException {
-//		// ProxySelector.setDefault(new ProxySelector() {
-//		//
-//		// @Override
-//		// public void connectFailed(URI uri, SocketAddress sa, IOException ioe)
-//		// {
-//		// throw new RuntimeException("Proxy connect failed", ioe);
-//		// }
-//		//
-//		// @Override
-//		// public List select(URI uri) {
-//		// return Arrays.asList(new Proxy(Proxy.Type.HTTP, new
-//		// InetSocketAddress("10.2.248.246", 8080)));
-//		// }
-//		// });
-//		// System.setProperty("https.proxyHost", "bittrex.com");
-//		// System.setProperty("http.proxyPort", "8080");
-//
-//		String url = "https://bittrex.com/api/v1.1/public/getmarkets", proxy = "10.2.248.246", port = "8080";
-//		URL server = new URL(url);
-//		Properties systemProperties = System.getProperties();
-//		systemProperties.setProperty("http.proxyHost", proxy);
-//		systemProperties.setProperty("http.proxyPort", port);
-//		HttpURLConnection connection = (HttpURLConnection) server.openConnection();
-//		connection.connect();
-//		InputStream in = connection.getInputStream();
-//		System.out.println("lala: " + in.toString());
-//	}
-
+	
+	private static void testHash() throws NoSuchAlgorithmException, InvalidKeyException {
+		String api = "";
+		String apiS = "";
+		Long nonce = Calendar.getInstance().getTimeInMillis();
+		// initialize a Mac instance using a signing key from the password
+		SecretKeySpec signingKey = new SecretKeySpec(api.getBytes(), "HmacSHA512");
+		Mac mac = Mac.getInstance("HmacSHA512");
+		mac.init(signingKey);
+	}
 }

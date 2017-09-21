@@ -89,16 +89,16 @@ public class API {
 	}
 
 	// Get ticker de una moneda
-	public static JSONArray getTicker(String coin) throws IOException {
+	public static JSONObject getTicker(String coin) throws IOException {
 		json = null;
 
 		if (Params.TEST)
-			json = new JSONObject("");
+			json = new JSONObject("{\"success\":true,\"message\":\"\",\"result\":{\"Bid\":0.00301509,\"Ask\":0.00305780,\"Last\":0.00305780}}");
 		else
 			json = connect("https://bittrex.com/api/v1.1/public/getticker?market=BTC-" + coin);
 
 		if (json.getBoolean("success"))
-			return json.getJSONArray("result");
+			return json.getJSONObject("result");
 		else {
 			try {
 				throw new FailedGetException("GetTicker(" + coin + "). Message = " + json.getString("message"));
@@ -370,6 +370,75 @@ public class API {
 		else {
 			try {
 				throw new FailedGetException("getOrder(" + uuid + "). Message = " + json.getString("message"));
+			} catch (JSONException | FailedGetException e) {
+				return null;
+			}
+		}
+	}
+
+	// Get Order history
+	public static JSONArray getOrderHistory() throws IOException {
+		json = null;
+
+		if (Params.TEST)
+			json = new JSONObject();
+		else
+			json = connect("https://bittrex.com/api/v1.1/account/getorderhistory");
+
+		if (json.getBoolean("success"))
+			return json.getJSONArray("result");
+		else {
+			try {
+				throw new FailedGetException("getOrderHistory. Message = " + json.getString("message"));
+			} catch (JSONException | FailedGetException e) {
+				return null;
+			}
+		}
+	}
+
+	// Get Withdrawal History
+	// public static JSONArray getWithdrawalHistory(String coin) throws
+	// IOException {
+	// }
+
+	// Get Withdrawal History ALL
+	// public static JSONArray getWithdrawalHistory() throws IOException {
+	// }
+
+	// Get Deposit History
+	public static JSONArray getDepositHistory(String coin) throws IOException {
+		json = null;
+
+		if (Params.TEST)
+			json = new JSONObject();
+		else
+			json = connect("https://bittrex.com/api/v1.1/account/getdeposithistory?currency=" + coin);
+
+		if (json.getBoolean("success"))
+			return json.getJSONArray("result");
+		else {
+			try {
+				throw new FailedGetException("getDepositHistory(" + coin + "). Message = " + json.getString("message"));
+			} catch (JSONException | FailedGetException e) {
+				return null;
+			}
+		}
+	}
+
+	// Get Deposit History ALL
+	public static JSONArray getDepositHistory() throws IOException {
+		json = null;
+
+		if (Params.TEST)
+			json = new JSONObject();
+		else
+			json = connect("https://bittrex.com/api/v1.1/account/getdeposithistory");
+
+		if (json.getBoolean("success"))
+			return json.getJSONArray("result");
+		else {
+			try {
+				throw new FailedGetException("getDepositHistory. Message = " + json.getString("message"));
 			} catch (JSONException | FailedGetException e) {
 				return null;
 			}
