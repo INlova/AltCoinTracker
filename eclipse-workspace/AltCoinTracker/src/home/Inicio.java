@@ -25,7 +25,7 @@ public class Inicio {
 			e1.printStackTrace();
 		}
 		System.exit(0);
-		
+
 		try {
 			while (!finish) {
 				JSONObject arry = API.getTicker("XZC");
@@ -39,14 +39,16 @@ public class Inicio {
 
 		System.exit(0);
 	}
-	
+
 	private static void testHash() throws NoSuchAlgorithmException, InvalidKeyException {
-		String api = "";
-		String apiS = "";
+		String api = "621c153e515843d8a853741185803b93";
+		String apiS = "796df535dcdd425c90cf73258e43fd45";
 		Long nonce = Calendar.getInstance().getTimeInMillis();
+		String uri = "https://bittrex.com/api/v1.1/market/getopenorders?apikey=" + api + "&nonce=" + nonce;
 		// initialize a Mac instance using a signing key from the password
-		SecretKeySpec signingKey = new SecretKeySpec(api.getBytes(), "HmacSHA512");
+		SecretKeySpec signingKey = new SecretKeySpec(uri.getBytes(), "HmacSHA512");
 		Mac mac = Mac.getInstance("HmacSHA512");
 		mac.init(signingKey);
+		mac.doFinal();
 	}
 }

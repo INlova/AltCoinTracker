@@ -6,6 +6,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Calendar;
+
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -18,12 +22,68 @@ import exceptions.InvalidParameterException;
 public class API {
 
 	private static JSONObject json = null;
+	private String apiKey = "621c153e515843d8a853741185803b93";
+	private String apiKeySecret = "796df535dcdd425c90cf73258e43fd45";
 
-	private static JSONObject connect(String uri) throws IOException {
+	private JSONObject connect_public(String uri) throws IOException {
 		URL url = new URL(uri);
 		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 		connection.setRequestMethod("GET");
 		connection.setRequestProperty("Accept", "application/json");
+		return executeQuery(connection);
+	}
+	
+	// https://github.com/platelminto/java-bittrex/blob/master/src/Bittrex.java
+	// HttpClient client = HttpClientBuilder.create().build();
+	// HttpGet request = new HttpGet(url);
+	//
+	// request.addHeader("apisign", EncryptionUtility.calculateHash(secret,
+	// url, encryptionAlgorithm)); // Attaches signature as a header
+
+	// Aca hay otro codigo copado:
+	// https://github.com/forgemo/bittrex-java-client
+
+	// VER como hacer esto..como se supone q la url tiene ser +apikey +
+	// nonce + lo puntual de la consultA? o esto es siempre la misma???
+	//
+	// OJO! q no es tan dificil..
+	//
+	// la idea es:
+	// 1. Pro cada conexión privada, generar la url: url + apikey + nonce.
+	// 2. Generar el hash512 con: esa url + apikeysecret
+	// 3. Meter en el HttpHeader el par: 'apisign: ' + ese hash generado
+	// 4. Y ahi si conectarse..
+	// seguro lo puedo hacer aca abajo.
+	
+	// Ver bien.. me quedo la duda.. el hash lo hago de la URL con todos los parametros no? se.. creo q si.
+	
+	private JSONObject connect_private(String uri, String params) {
+		uri = uri + "?apikey= " + apiKey + "&nonce=" + generateNonce() + params;
+		URL url = new URL(uri);
+		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+		connection.setRequestMethod("GET");
+		connection.setRequestProperty("Accept", "application/json");
+		connection.setRequestProperty("apisign", EncryptionUtility.calculateHash(apiKeySecret, url, "HmacSHA512"));
+		return executeQuery(connection);
+		
+		// Prueba
+		Mac mac = Mac.getInstance("HmacSHA512");
+        SecretKeySpec secretKeySpec = new SecretKeySpec(apiKeySecret.getBytes(), "HmacSHA512");
+        mac.init(secretKeySpec);
+        byte[] signBytes = mac.doFinal(uri.getBytes());
+        StringBuilder stringBuilder = new StringBuilder();
+        for (byte b : signBytes) {
+            stringBuilder.append(String.format("%02x", b));
+        }
+        String sign = stringBuilder.toString();
+//        NO TERMINE!! VER: https://github.com/forgemo/bittrex-java-client
+	}
+
+	private String generateNonce() {
+		return "" + Calendar.getInstance().getTimeInMillis();
+	}
+
+	private static JSONObject executeQuery(HttpURLConnection connection) throws IOException {
 
 		InputStream is = connection.getInputStream();
 
@@ -49,13 +109,13 @@ public class API {
 	// Public Methods
 
 	// Get todos los markets.
-	public static JSONArray getMarkets() throws IOException {
+	public JSONArray getMarkets() throws IOException {
 		json = null;
 
 		if (Params.TEST)
 			json = new JSONObject("");
 		else
-			json = connect("https://bittrex.com/api/v1.1/public/getmarkets");
+			json = connect_public("https://bittrex.com/api/v1.1/public/getmarkets");
 
 		if (json.getBoolean("success"))
 			return json.getJSONArray("result");
@@ -69,13 +129,13 @@ public class API {
 	}
 
 	// Get listado de monedas
-	public static JSONArray getCurrencies() throws IOException {
+	public JSONArray getCurrencies() throws IOException {
 		json = null;
 
 		if (Params.TEST)
 			json = new JSONObject("");
 		else
-			json = connect("https://bittrex.com/api/v1.1/public/getcurrencies");
+			json = connect_public("https://bittrex.com/api/v1.1/public/getcurrencies");
 
 		if (json.getBoolean("success"))
 			return json.getJSONArray("result");
@@ -89,13 +149,14 @@ public class API {
 	}
 
 	// Get ticker de una moneda
-	public static JSONObject getTicker(String coin) throws IOException {
+	public JSONObject getTicker(String coin) throws IOException {
 		json = null;
 
 		if (Params.TEST)
-			json = new JSONObject("{\"success\":true,\"message\":\"\",\"result\":{\"Bid\":0.00301509,\"Ask\":0.00305780,\"Last\":0.00305780}}");
+			json = new JSONObject(
+					"{\"success\":true,\"message\":\"\",\"result\":{\"Bid\":0.00301509,\"Ask\":0.00305780,\"Last\":0.00305780}}");
 		else
-			json = connect("https://bittrex.com/api/v1.1/public/getticker?market=BTC-" + coin);
+			json = connect_public("https://bittrex.com/api/v1.1/public/getticker?market=BTC-" + coin);
 
 		if (json.getBoolean("success"))
 			return json.getJSONObject("result");
@@ -109,13 +170,13 @@ public class API {
 	}
 
 	// Get resumen de todas las monedas
-	public static JSONArray getMarketSummaries() throws IOException {
+	public JSONArray getMarketSummaries() throws IOException {
 		json = null;
 
 		if (Params.TEST)
 			json = new JSONObject();
 		else
-			json = connect("https://bittrex.com/api/v1.1/public/getmarketsummaries");
+			json = connect_public("https://bittrex.com/api/v1.1/public/getmarketsummaries");
 
 		if (json.getBoolean("success"))
 			return json.getJSONArray("result");
@@ -129,14 +190,14 @@ public class API {
 	}
 
 	// Get resumen de una moneda
-	public static JSONArray getMarketSummary(String coin) throws IOException {
+	public JSONArray getMarketSummary(String coin) throws IOException {
 		json = null;
 
 		if (Params.TEST)
 			json = new JSONObject(
 					"{\"success\":true,\"message\":\"\",\"result\":[{\"MarketName\":\"BTC-FTC\",\"High\":0.00001300,\"Low\":0.00001066,\"Volume\":2925260.02699330,\"Last\":0.00001150,\"BaseVolume\":34.01223061,\"TimeStamp\":\"2017-09-20T19:13:22.103\",\"Bid\":0.00001150,\"Ask\":0.00001162,\"OpenBuyOrders\":593,\"OpenSellOrders\":5177,\"PrevDay\":0.00001191,\"Created\":\"2014-02-13T00:00:00\"}]}");
 		else
-			json = connect("https://bittrex.com/api/v1.1/public/getmarketsummary?market=btc-" + coin);
+			json = connect_public("https://bittrex.com/api/v1.1/public/getmarketsummary?market=btc-" + coin);
 
 		if (json.getBoolean("success"))
 			return json.getJSONArray("result");
@@ -150,7 +211,7 @@ public class API {
 	}
 
 	// Get order book
-	public static JSONArray getOrderBook(String coin, String type) throws IOException {
+	public JSONArray getOrderBook(String coin, String type) throws IOException {
 		json = null;
 
 		if (type != "buy" && type != "sell" && type != "both") {
@@ -165,7 +226,8 @@ public class API {
 		if (Params.TEST)
 			json = new JSONObject();
 		else
-			json = connect("https://bittrex.com/api/v1.1/public/getorderbook?market=BTC-" + coin + "&type=" + type);
+			json = connect_public(
+					"https://bittrex.com/api/v1.1/public/getorderbook?market=BTC-" + coin + "&type=" + type);
 
 		if (json.getBoolean("success"))
 			return json.getJSONArray("result");
@@ -179,13 +241,13 @@ public class API {
 	}
 
 	// Get resumen del market
-	public static JSONArray getMarketHistory(String coin) throws IOException {
+	public JSONArray getMarketHistory(String coin) throws IOException {
 		json = null;
 
 		if (Params.TEST)
 			json = new JSONObject();
 		else
-			json = connect("https://bittrex.com/api/v1.1/public/getmarkethistory?market=BTC-" + coin);
+			json = connect_public("https://bittrex.com/api/v1.1/public/getmarkethistory?market=BTC-" + coin);
 
 		if (json.getBoolean("success"))
 			return json.getJSONArray("result");
