@@ -76,6 +76,7 @@ public class API {
             stringBuilder.append(String.format("%02x", b));
         }
         String sign = stringBuilder.toString();
+
 //        NO TERMINE!! VER: https://github.com/forgemo/bittrex-java-client
 	}
 
